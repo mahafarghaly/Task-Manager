@@ -1,8 +1,10 @@
 // main.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:solid_and_pagination/presentation/views/pages/task_list_page.dart';
 import 'data/data_source/local_task_data_source.dart';
 import 'domain/entities/task_entity.dart';
+import 'domain/usecases/delete_task.dart';
 import 'domain/usecases/get_tasks.dart';
 import 'domain/usecases/add_task.dart';
 import 'data/repositories/task_repository_impl.dart';
@@ -55,7 +57,7 @@ class MyApp extends StatelessWidget {
           updateTaskUseCase: updateTask,
           deleteTaskUseCase: deleteTask,
         )..add(LoadTasks()), // load tasks on start
-        child: TaskPage(),
+        child: TaskListPage()//TaskPage(),
       ),
     );
   }
@@ -90,7 +92,7 @@ class TaskPage extends StatelessWidget {
                   ),
                   trailing: IconButton(
                     icon: Icon(Icons.delete),
-                    onPressed: () => bloc.add(DeleteTask(task.id)),
+                    onPressed: () => bloc.add(DeleteExistingTask(task.id)),
                   ),
                 );
               },

@@ -4,7 +4,7 @@ import '../../domain/entities/task_entity.dart';
 abstract class TaskEvent {}
 
 class LoadTasks extends TaskEvent {}
-
+class LoadMoreTasks extends TaskEvent {}
 class AddNewTask extends TaskEvent {
   final TaskEntity task;
   AddNewTask(this.task);
@@ -15,7 +15,7 @@ class UpdateExistingTask extends TaskEvent {
   UpdateExistingTask(this.task);
 }
 
-class DeleteTask extends TaskEvent {
+class DeleteExistingTask extends TaskEvent {
   final String id;
-  DeleteTask(this.id);
+  DeleteExistingTask(this.id);
 }
