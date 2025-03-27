@@ -1,4 +1,3 @@
-// presentation/bloc/task_event.dart
 import '../../domain/entities/task_entity.dart';
 
 abstract class TaskEvent {}

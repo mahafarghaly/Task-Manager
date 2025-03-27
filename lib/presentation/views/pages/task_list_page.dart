@@ -1,14 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:solid_and_pagination/data/models/task_model.dart';
 import 'package:solid_and_pagination/domain/entities/task_entity.dart';
-import 'package:solid_and_pagination/domain/usecases/update_task.dart';
-
 import '../../bloc/task_bloc.dart';
 import '../../bloc/task_event.dart';
 import '../../bloc/task_state.dart';
+import '../../helper/infinit_scroll.dart';
+import '../widgets/task_list_item.dart';
 
-class TaskListPage extends StatelessWidget {
+class TaskListPage extends StatefulWidget {
+  const TaskListPage({super.key});
+
+  @override
+  _TaskListPageState createState() => _TaskListPageState();
+}
+
+class _TaskListPageState extends State<TaskListPage> with InfiniteScrollMixin<TaskListPage> {
+  @override
+  void initState() {
+    super.initState();
+    context.read<TaskBloc>().add(LoadTasks());
+  }
+
+  @override
+  void onScroll() {
+    final taskBloc = context.read<TaskBloc>();
+    final pagination = taskBloc.pagination;
+
+    if (scrollController.position.pixels >= scrollController.position.maxScrollExtent - 100 &&
+        pagination.hasMore &&
+        !pagination.isLoadingMore) {
+      taskBloc.add(LoadMoreTasks());
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -17,35 +41,17 @@ class TaskListPage extends StatelessWidget {
         builder: (context, state) {
           if (state is TaskLoading) {
             return Center(child: CircularProgressIndicator());
-          } else if (state is TaskLoaded || state is TaskLoadingMore) {
-            final tasks = (state as dynamic).tasks;
-            final hasMore = (state as dynamic).hasMore;
+          } else if (state is TaskLoaded) {
+            final tasks = state.tasks;
+            final hasMore = state.hasMore;
             return ListView.builder(
+              controller: scrollController,
               itemCount: tasks.length + (hasMore ? 1 : 0),
               itemBuilder: (context, index) {
-                if (index == tasks.length) {
+                if (index == tasks.length && hasMore) {
                   return Center(child: CircularProgressIndicator());
                 }
-                return ListTile(
-                  title: Text(tasks[index].title),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: Icon(Icons.edit),
-                        onPressed: () {
-                          context.read<TaskBloc>().add(UpdateExistingTask(TaskEntity(id: tasks[index].id, title: 'Updated ${tasks[index].title}')));
-                        },
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.delete),
-                        onPressed: () {
-                          context.read<TaskBloc>().add(DeleteExistingTask(tasks[index].id));
-                        },
-                      ),
-                    ],
-                  ),
-                );
+                return TaskListItem(task: tasks[index]);
               },
             );
           }
@@ -53,12 +59,17 @@ class TaskListPage extends StatelessWidget {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          final newTask = TaskModel(id: DateTime.now().millisecondsSinceEpoch.toString(), title: 'New Task');
-          context.read<TaskBloc>().add(AddNewTask(newTask));
-        },
+        onPressed: _addTask,
         child: Icon(Icons.add),
       ),
     );
+  }
+
+  void _addTask() {
+    final newTask = TaskEntity(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      title: 'New Task',
+    );
+    context.read<TaskBloc>().add(AddNewTask(newTask));
   }
 }
